@@ -11,7 +11,7 @@ def generate_key():
         key_file.write(key)
     return key
 
-def load_key():
+def load_key(): 
     if not os.path.exists(KEY_FILE):
         return generate_key()
     with open(KEY_FILE, 'rb') as key_file:
