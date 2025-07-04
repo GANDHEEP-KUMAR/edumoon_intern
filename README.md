@@ -1,2 +1,0 @@
-# edumoon_intern
-testing
