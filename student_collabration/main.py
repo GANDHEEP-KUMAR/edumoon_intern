@@ -12,11 +12,6 @@ app = FastAPI(
     version="1.0.0"
     )
 
-app.add_middleware(Auth_middleware)
-app.include_router(api_router, prefix="/api/v1/user", tags=["users"])
-app.include_router(post_router, prefix="/api/v1/post", tags=["posts"])
-app.include_router(comment_router, prefix="/api/v1/comment", tags=["comments"]) 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins, adjust as needed
@@ -24,5 +19,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(Auth_middleware)
+app.include_router(api_router, prefix="/api/v1/user", tags=["users"])
+app.include_router(post_router, prefix="/api/v1/post", tags=["posts"])
+app.include_router(comment_router, prefix="/api/v1/comment", tags=["comments"]) 
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8080, reload=True)
