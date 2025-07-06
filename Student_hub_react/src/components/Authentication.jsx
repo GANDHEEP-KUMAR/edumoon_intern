@@ -127,10 +127,10 @@ function AuthForm(props) {
                   }}>
                     <i className="fas fa-user-circle fa-2x"></i>
                   </div>
-                  <h2 className="gradient-text mb-2 fw-bold">
+                  <h2 className="gradient-text mb-2 fw-bold" style={{ color: '#495057' }}>
                     {islogin ? "Welcome Back" : "Join StudentHub"}
                   </h2>
-                  <p className="text-muted">
+                  <p style={{ color: '#6c757d' }}>
                     {islogin ? "Sign in to continue your learning journey" : "Create your account and start collaborating"}
                   </p>
                 </div>
@@ -138,7 +138,7 @@ function AuthForm(props) {
                 <Form className="animate-slide-up">
                   {!islogin && (
                     <Form.Group className="mb-4" controlId="formBasicName">
-                      <Form.Label className="fw-semibold">
+                      <Form.Label className="fw-semibold" style={{ color: '#495057' }}>
                         <i className="fas fa-user me-2 text-primary"></i>Full Name
                       </Form.Label>
                       <Form.Control 
@@ -147,14 +147,21 @@ function AuthForm(props) {
                         value={input.name} 
                         onChange={(e) => setInput((prev) => ({ ...prev, name: e.target.value }))}
                         className="form-control-lg"
-                        style={{ borderRadius: '12px', padding: '16px' }}
+                        style={{ 
+                          borderRadius: '12px', 
+                          padding: '16px',
+                          backgroundColor: '#ffffff',
+                          border: '2px solid #e9ecef',
+                          color: '#495057',
+                          fontSize: '15px'
+                        }}
                       />
                     </Form.Group>
                   )}
 
                   {!islogin && (
                     <Form.Group className="mb-4" controlId="formBasicBio">
-                      <Form.Label className="fw-semibold">
+                      <Form.Label className="fw-semibold" style={{ color: '#495057' }}>
                         <i className="fas fa-edit me-2 text-primary"></i>Bio
                       </Form.Label>
                       <Form.Control 
@@ -163,13 +170,21 @@ function AuthForm(props) {
                         placeholder="Tell us about yourself..." 
                         value={input.bio} 
                         onChange={(e) => setInput((prev) => ({ ...prev, bio: e.target.value }))}
-                        style={{ borderRadius: '12px', padding: '16px' }}
+                        style={{ 
+                          borderRadius: '12px', 
+                          padding: '16px',
+                          backgroundColor: '#ffffff',
+                          border: '2px solid #e9ecef',
+                          color: '#495057',
+                          fontSize: '15px',
+                          resize: 'vertical'
+                        }}
                       />
                     </Form.Group>
                   )}
 
                   <Form.Group className="mb-4" controlId="formBasicEmail">
-                    <Form.Label className="fw-semibold">
+                    <Form.Label className="fw-semibold" style={{ color: '#495057' }}>
                       <i className="fas fa-envelope me-2 text-primary"></i>Email Address
                     </Form.Label>
                     <Form.Control 
@@ -178,12 +193,19 @@ function AuthForm(props) {
                       value={input.email} 
                       onChange={(e) => setInput((prev) => ({ ...prev, email: e.target.value }))}
                       className="form-control-lg"
-                      style={{ borderRadius: '12px', padding: '16px' }}
+                      style={{ 
+                        borderRadius: '12px', 
+                        padding: '16px',
+                        backgroundColor: '#ffffff',
+                        border: '2px solid #e9ecef',
+                        color: '#495057',
+                        fontSize: '15px'
+                      }}
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-4" controlId="formBasicPassword">
-                    <Form.Label className="fw-semibold">
+                    <Form.Label className="fw-semibold" style={{ color: '#495057' }}>
                       <i className="fas fa-lock me-2 text-primary"></i>Password
                     </Form.Label>
                     <Form.Control 
@@ -192,13 +214,20 @@ function AuthForm(props) {
                       value={input.password} 
                       onChange={(e) => setInput((prev) => ({ ...prev, password: e.target.value }))}
                       className="form-control-lg"
-                      style={{ borderRadius: '12px', padding: '16px' }}
+                      style={{ 
+                        borderRadius: '12px', 
+                        padding: '16px',
+                        backgroundColor: '#ffffff',
+                        border: '2px solid #e9ecef',
+                        color: '#495057',
+                        fontSize: '15px'
+                      }}
                     />
                   </Form.Group>
 
                   {!islogin && (
                     <Form.Group className="mb-4" controlId="formBasicConfirmPassword">
-                      <Form.Label className="fw-semibold">
+                      <Form.Label className="fw-semibold" style={{ color: '#495057' }}>
                         <i className="fas fa-shield-alt me-2 text-primary"></i>Confirm Password
                       </Form.Label>
                       <Form.Control 
@@ -207,7 +236,14 @@ function AuthForm(props) {
                         value={input.confirmpassword} 
                         onChange={(e) => setInput((prev) => ({ ...prev, confirmpassword: e.target.value }))}
                         className="form-control-lg"
-                        style={{ borderRadius: '12px', padding: '16px' }}
+                        style={{ 
+                          borderRadius: '12px', 
+                          padding: '16px',
+                          backgroundColor: '#ffffff',
+                          border: '2px solid #e9ecef',
+                          color: '#495057',
+                          fontSize: '15px'
+                        }}
                       />
                     </Form.Group>
                   )}
@@ -240,7 +276,7 @@ function AuthForm(props) {
                       to={islogin ? "/sign-up" : "/login"}
                       className="text-decoration-none"
                       style={{ 
-                        color: 'var(--primary-color)',
+                        color: '#667eea',
                         fontWeight: '500',
                         transition: 'all 0.3s ease'
                       }}
@@ -264,6 +300,88 @@ function AuthForm(props) {
           </div>
         </div>
       </div>
+      
+      {/* Custom Styles for Cool and Neat Look */}
+      <style jsx>{`
+        .form-control:focus {
+          border-color: #667eea !important;
+          box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+        }
+        
+        .form-control::placeholder {
+          color: #adb5bd !important;
+          font-style: italic;
+        }
+        
+        .form-control:hover {
+          border-color: #667eea !important;
+          transition: all 0.3s ease;
+        }
+        
+        .gradient-text {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        
+        .btn-gradient {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: none;
+          color: white;
+          transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+          background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out;
+        }
+        
+        .animate-scale-in {
+          animation: scaleIn 0.6s ease-out;
+        }
+        
+        .animate-slide-up {
+          animation: slideUp 0.7s ease-out 0.2s both;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+          from { 
+            opacity: 0; 
+            transform: scale(0.9);
+          }
+          to { 
+            opacity: 1; 
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes slideUp {
+          from { 
+            opacity: 0; 
+            transform: translateY(30px);
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+      `}</style>
     </>
   );
 }

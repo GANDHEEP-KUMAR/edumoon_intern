@@ -12,17 +12,17 @@
   --warning-color: #ff9a56;
   --danger-color: #ff6b6b;
   
-  --text-primary: #2c3e50;
-  --text-secondary: #7f8c8d;
+  --text-primary: #495057;
+  --text-secondary: #6c757d;
   --text-light: #ecf0f1;
   
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
   --bg-accent: #f4f6ff;
   
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.15);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,0.2);
+  --shadow-sm: 0 2px 8px rgba(108, 117, 125, 0.1);
+  --shadow-md: 0 4px 20px rgba(108, 117, 125, 0.15);
+  --shadow-lg: 0 8px 40px rgba(108, 117, 125, 0.2);
   --shadow-colored: 0 8px 32px rgba(102, 126, 234, 0.3);
   
   --border-radius: 12px;

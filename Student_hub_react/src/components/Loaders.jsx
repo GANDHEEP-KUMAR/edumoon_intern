@@ -63,7 +63,7 @@ const Loader = () => {
                 >
                     Loading...
                 </h5>
-                <p className="text-muted small mb-0">Please wait while we fetch your content</p>
+                <p className="small mb-0" style={{ color: '#6c757d' }}>Please wait while we fetch your content</p>
             </div>
 
             {/* Animated dots */}
@@ -73,7 +73,7 @@ const Loader = () => {
                     style={{
                         width: '8px',
                         height: '8px',
-                        background: 'var(--primary-color)',
+                        background: '#667eea',
                         borderRadius: '50%',
                         animation: 'bounce 1.4s ease-in-out infinite both',
                         animationDelay: '0s'
@@ -84,7 +84,7 @@ const Loader = () => {
                     style={{
                         width: '8px',
                         height: '8px',
-                        background: 'var(--primary-color)',
+                        background: '#667eea',
                         borderRadius: '50%',
                         animation: 'bounce 1.4s ease-in-out infinite both',
                         animationDelay: '0.16s'
@@ -94,7 +94,7 @@ const Loader = () => {
                     style={{
                         width: '8px',
                         height: '8px',
-                        background: 'var(--primary-color)',
+                        background: '#667eea',
                         borderRadius: '50%',
                         animation: 'bounce 1.4s ease-in-out infinite both',
                         animationDelay: '0.32s'

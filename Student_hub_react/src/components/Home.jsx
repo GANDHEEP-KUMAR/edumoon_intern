@@ -784,17 +784,19 @@ const Home = () => {
       </div>
 
       {/* Search and Filter Section */}
-      <div className="bg-light py-3">
+      <div style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' }} className="py-4">
         <div className="container">
           <div className="row g-3 align-items-center">
             <div className="col-md-6">
-              <div className="input-group">
+              <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden' }}>
                 <span 
                   className="input-group-text"
                   style={{ 
                     backgroundColor: '#fff',
-                    border: '1px solid #ced4da',
-                    color: '#667eea'
+                    border: '2px solid #e9ecef',
+                    color: '#667eea',
+                    fontSize: '16px',
+                    padding: '12px 16px'
                   }}
                 >
                   <i className="fas fa-search"></i>
@@ -802,21 +804,38 @@ const Home = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Search posts, tags, or content..."
+                  placeholder="🔍 Search posts, tags, or content..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{
-                    border: '1px solid #ced4da',
-                    color: '#495057'
+                    border: '2px solid #e9ecef',
+                    borderLeft: 'none',
+                    color: '#495057',
+                    fontSize: '15px',
+                    padding: '12px 16px',
+                    backgroundColor: '#ffffff'
                   }}
                 />
                 {searchTerm && (
                   <button
-                    className="btn btn-outline-secondary"
+                    className="btn"
                     onClick={() => setSearchTerm('')}
                     style={{
                       color: '#6c757d',
-                      borderColor: '#ced4da'
+                      borderColor: '#e9ecef',
+                      backgroundColor: '#fff',
+                      border: '2px solid #e9ecef',
+                      borderLeft: 'none',
+                      padding: '12px 16px',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#f8f9fa';
+                      e.target.style.color = '#495057';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#fff';
+                      e.target.style.color = '#6c757d';
                     }}
                   >
                     <i className="fas fa-times"></i>
@@ -825,15 +844,59 @@ const Home = () => {
               </div>
             </div>
             <div className="col-md-6">
-              <div className="d-flex gap-2">
-                <span className="align-self-center me-2" style={{ color: '#495057' }}>Filter:</span>
+              <div className="d-flex gap-2 align-items-center">
+                <span className="fw-semibold me-2" style={{ color: '#495057', fontSize: '14px' }}>
+                  <i className="fas fa-filter me-1" style={{ color: '#667eea' }}></i>
+                  Filter:
+                </span>
                 {['all', 'notes', 'jobs', 'queries'].map(type => (
                   <button
                     key={type}
-                    className={`btn btn-sm ${filterType === type ? 'btn-primary' : 'btn-outline-primary'}`}
+                    className={`btn btn-sm ${filterType === type ? '' : ''}`}
                     onClick={() => setFilterType(type)}
+                    style={{
+                      backgroundColor: filterType === type ? '#667eea' : '#ffffff',
+                      color: filterType === type ? '#ffffff' : '#495057',
+                      border: '2px solid #e9ecef',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      transition: 'all 0.3s ease',
+                      textTransform: 'capitalize'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filterType !== type) {
+                        e.target.style.backgroundColor = '#f8f9fa';
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.color = '#667eea';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filterType !== type) {
+                        e.target.style.backgroundColor = '#ffffff';
+                        e.target.style.borderColor = '#e9ecef';
+                        e.target.style.color = '#495057';
+                      }
+                    }}
                   >
-                    {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+                    {type === 'all' ? (
+                      <>
+                        <i className="fas fa-th me-1"></i>All
+                      </>
+                    ) : type === 'notes' ? (
+                      <>
+                        <i className="fas fa-sticky-note me-1"></i>Notes
+                      </>
+                    ) : type === 'jobs' ? (
+                      <>
+                        <i className="fas fa-briefcase me-1"></i>Jobs
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-question-circle me-1"></i>Queries
+                      </>
+                    )}
                   </button>
                 ))}
               </div>
@@ -841,12 +904,32 @@ const Home = () => {
           </div>
           
           {/* Results Summary */}
-          <div className="mt-2">
-            <small className="text-muted">
-              Showing {filteredPosts.length} of {posts.length} posts
-              {searchTerm && ` for "${searchTerm}"`}
-              {filterType !== 'all' && ` in ${filterType}`}
-            </small>
+          <div className="mt-3">
+            <div 
+              className="badge d-inline-flex align-items-center"
+              style={{
+                backgroundColor: '#f8f9fa',
+                color: '#495057',
+                border: '1px solid #e9ecef',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: '500'
+              }}
+            >
+              <i className="fas fa-chart-bar me-2 text-primary"></i>
+              Showing <strong className="mx-1">{filteredPosts.length}</strong> of <strong className="mx-1">{posts.length}</strong> posts
+              {searchTerm && (
+                <span style={{ color: '#667eea' }} className="ms-1">
+                  for "<em>{searchTerm}</em>"
+                </span>
+              )}
+              {filterType !== 'all' && (
+                <span style={{ color: '#667eea' }} className="ms-1">
+                  in <em>{filterType}</em>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -906,6 +989,29 @@ const Home = () => {
           )}
         </div>
       </div>
+      
+      {/* Custom Styles for Cool Search Bar */}
+      <style jsx>{`
+        .form-control:focus {
+          border-color: #667eea !important;
+          box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+          transform: translateY(-1px);
+        }
+        
+        .input-group:hover .form-control {
+          border-color: #667eea !important;
+        }
+        
+        .input-group:hover .input-group-text {
+          border-color: #667eea !important;
+          color: #495057 !important;
+        }
+        
+        .form-control::placeholder {
+          color: #adb5bd !important;
+          font-style: italic;
+        }
+      `}</style>
     </>
   )
 }
