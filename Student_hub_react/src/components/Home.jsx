@@ -19,7 +19,7 @@ const Home = () => {
   const fetchPosts = async () => {
     setLoader(true);
     try {
-      const url = import.meta.env.VITE_SH_BE_URI + 'api/v1/post';
+      const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post';
       const response = await axios.get(url, {
         headers: {
           Authorization: localStorage.getItem('session_token'),
@@ -67,7 +67,7 @@ const Home = () => {
     const fetchComments = async (post_id) => {
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_SH_BE_URI + `api/v1/post/by-user${post_id}`;
+        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comments/by-post/${post_id}`;
         const response = await axios.get(url, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
@@ -87,7 +87,7 @@ const Home = () => {
       if (!commentInput.trim()) return;
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_SH_BE_URI + `api/v1/comments/create`;
+        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comments/create`;
         const payload = {
           post_id: post_id,
           content: commentInput,
@@ -234,7 +234,7 @@ const Home = () => {
           formData.append('file', postInput.file);
         }
 
-        const url = import.meta.env.VITE_SH_BE_URI + 'api/v1/post/create';
+        const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post/create';
         await axios.post(url, formData, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
@@ -341,14 +341,14 @@ const Home = () => {
       {loader && <Loader />}
       {selectedPost ? <PostModal post={selectedPost} /> : <></>}
       {createPostModal ? <CreatePostModal /> : <></>}
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-5">
-        <h1 className="text-4xl font-bold mb-4">Welcome to StudentHub</h1>
-        <div className="text-lg text-gray-700 mx-auto d-flex justify-space-between items-center mb-4">
-          <div>Your collaborative learning platform</div>
-          <Badge bg="secondary" className={{ "marginLeft": "10px" }} onClick={() => setCreatePostModal(true)}>+ New</Badge>
+      <div className="container-fluid bg-light p-5 text-center">
+        <h1 className="display-4 mb-4">Welcome to StudentHub</h1>
+        <div className="d-flex justify-content-center align-items-center mb-4">
+          <div className="me-3 lead">Your collaborative learning platform</div>
+          <Badge bg="secondary" style={{ cursor: 'pointer' }} onClick={() => setCreatePostModal(true)}>+ New</Badge>
         </div>
       </div>
-      <div className="flex justify-center mt-8 p-5 pt-0">
+      <div className="container mt-4">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post.post_id} onClick={(e) => {
             e.stopPropagation();

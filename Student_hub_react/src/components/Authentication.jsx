@@ -53,17 +53,19 @@ function AuthForm(props) {
       // Handle login logic here
       if (!input.email || !input.password) {
         alert("Email and Password are required");
+        return;
       }
       triggerAPI(input);
     }
     else {
-      // Handle sign-in logic here
+      // Handle sign-up logic here
       if (input.password !== input.confirmpassword) {
         alert("Passwords do not match");
         return;
       }
       if (!input.name || !input.email || !input.password) {
         alert("Name, Email, and Password are required");
+        return;
       }
       triggerAPI(input);
     }
@@ -101,13 +103,13 @@ function AuthForm(props) {
             <Form.Control type="password" placeholder="Password" value={input.password} onChange={(e) => setInput((prev) => ({ ...prev, password: e.target.value }))} />
           </Form.Group>
           {!islogin && <Form.Group className="mb-3" controlId="formBasicConfirmPassword">
-            <Form.Label>ConfirmPassword</Form.Label>
-            <Form.Control type="confirmpassword" placeholder="ConfirmPassword" value={input.confirmpassword} onChange={(e) => setInput((prev) => ({ ...prev, confirmpassword: e.target.value }))} />
+            <Form.Label>Confirm Password</Form.Label>
+            <Form.Control type="password" placeholder="Confirm Password" value={input.confirmpassword} onChange={(e) => setInput((prev) => ({ ...prev, confirmpassword: e.target.value }))} />
           </Form.Group>}
 
           <Link to={islogin ? "/sign-up" : "/login"}>
             <Form.Text className="text-muted">
-              {islogin ? "Don't have an account? Sign In" : "Already have an account? Login"}
+              {islogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
             </Form.Text>
           </Link>
 
@@ -116,13 +118,6 @@ function AuthForm(props) {
             // Handle form submission logic here
             console.log("Form submitted with data:", input);
             handleformsubmit(input);
-            // Reset the form or redirect as needed
-            setInput({
-              name: '',
-              email: '',
-              password: '',
-              bio: ''
-            });
           }}>
             Submit
           </Button>
