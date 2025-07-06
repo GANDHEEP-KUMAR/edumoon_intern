@@ -23,7 +23,7 @@ const Profile = () => {
   };
 
   const getCurrentUserName = () => {
-    return localStorage.getItem('user_name') || localStorage.getItem('user_email') || 'Current User';
+    return localStorage.getItem('user_name') || localStorage.getItem('username') || localStorage.getItem('user_email') || 'Current User';
   };
 
   useEffect(() => {
@@ -62,40 +62,27 @@ const Profile = () => {
 
   const fetchUserComments = async () => {
     try {
-      // Get comments by parsing all posts and filtering by user
-      const allCommentsData = [];
-      
-      // For each post, fetch its comments and filter by current user
-      for (const post of userPosts) {
+      const allPostsUrl = import.meta.env.VITE_SH_BE_URL + 'api/v1/post/all';
+      const postsResp = await axios.get(allPostsUrl);
+      const postsArr = postsResp.data?.data || [];
+
+      const userEmail = getCurrentUserEmail();
+      const commentPromises = postsArr.map(async (p) => {
         try {
-          const url = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${post.post_id}`;
-          const response = await axios.get(url, {
-            headers: {
-              Authorization: localStorage.getItem('session_token'),
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          if (response.data.data && Array.isArray(response.data.data)) {
-            const userEmail = getCurrentUserEmail();
-            const userComments = response.data.data.filter(comment => 
-              comment.created_by === userEmail
-            );
-            
-            // Add post context to each comment
-            userComments.forEach(comment => {
-              comment.post_title = post.title;
-              comment.post_id = post.post_id;
-            });
-            
-            allCommentsData.push(...userComments);
-          }
-        } catch (error) {
-          console.error(`Error fetching comments for post ${post.post_id}:`, error);
+          const commentsUrl = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${p.post_id}`;
+          const resp = await axios.get(commentsUrl);
+          const comments = resp.data?.data || [];
+          return comments
+            .filter(c => c.created_by === userEmail)
+            .map(c => ({ ...c, post_title: p.title, post_id: p.post_id }));
+        } catch {
+          return [];
         }
-      }
-      
-      setUserComments(allCommentsData);
+      });
+
+      const commentsNested = await Promise.all(commentPromises);
+      const flatComments = commentsNested.flat();
+      setUserComments(flatComments);
     } catch (error) {
       console.error('Error fetching user comments:', error);
       setUserComments([]);
