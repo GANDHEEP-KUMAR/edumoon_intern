@@ -9,6 +9,9 @@ function Navigationbar() {
   
   const handleLogout = () => {
     localStorage.removeItem('session_token');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_id');
     window.location.href = '/login';
   };
 

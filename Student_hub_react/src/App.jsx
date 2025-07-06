@@ -2,6 +2,7 @@ import Navigationbar from './components/navigationbar'
 import AuthForm from './components/Authentication'; 
 import Home from './components/Home';
 import Profile from './components/Profile';
+import AuthGuard from './components/AuthGuard';
 import {
     Routes,
     Route,
@@ -12,7 +13,7 @@ function App() {
   const isauthpath = ["/login", "/sign-up", "/auth"].includes(useLocation().pathname);
 
   return (
-          <>
+          <AuthGuard>
            {!isauthpath && <Navigationbar />}
              <Routes>
               <Route path="/" element={<AuthForm islogin = {true} />} />
@@ -21,7 +22,7 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/profile" element={<Profile />} />
           </Routes>
-          </>
+          </AuthGuard>
 
           
   )

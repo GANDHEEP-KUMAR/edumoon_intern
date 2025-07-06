@@ -17,11 +17,13 @@ const Profile = () => {
     joinDate: ''
   });
 
-  // Get user email from session
+  // Get user info from session
   const getCurrentUserEmail = () => {
-    // This would typically be decoded from JWT token
-    // For now, we'll use a placeholder - you may need to implement JWT decoding
     return localStorage.getItem('user_email') || 'Current User';
+  };
+
+  const getCurrentUserName = () => {
+    return localStorage.getItem('user_name') || localStorage.getItem('user_email') || 'Current User';
   };
 
   useEffect(() => {
@@ -31,11 +33,10 @@ const Profile = () => {
   const fetchUserData = async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        fetchUserPosts(),
-        fetchUserComments(),
-        fetchUserStats()
-      ]);
+      // First fetch posts, then comments (which depend on posts), then stats
+      await fetchUserPosts();
+      await fetchUserComments();
+      await fetchUserStats();
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -60,10 +61,41 @@ const Profile = () => {
   };
 
   const fetchUserComments = async () => {
-    // This endpoint might need to be created in your backend
     try {
-      // For now, we'll simulate this data
-      setUserComments([]);
+      // Get comments by parsing all posts and filtering by user
+      const allCommentsData = [];
+      
+      // For each post, fetch its comments and filter by current user
+      for (const post of userPosts) {
+        try {
+          const url = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${post.post_id}`;
+          const response = await axios.get(url, {
+            headers: {
+              Authorization: localStorage.getItem('session_token'),
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (response.data.data && Array.isArray(response.data.data)) {
+            const userEmail = getCurrentUserEmail();
+            const userComments = response.data.data.filter(comment => 
+              comment.created_by === userEmail
+            );
+            
+            // Add post context to each comment
+            userComments.forEach(comment => {
+              comment.post_title = post.title;
+              comment.post_id = post.post_id;
+            });
+            
+            allCommentsData.push(...userComments);
+          }
+        } catch (error) {
+          console.error(`Error fetching comments for post ${post.post_id}:`, error);
+        }
+      }
+      
+      setUserComments(allCommentsData);
     } catch (error) {
       console.error('Error fetching user comments:', error);
       setUserComments([]);
@@ -83,6 +115,15 @@ const Profile = () => {
       console.error('Error fetching user stats:', error);
     }
   };
+
+  // Update stats whenever posts or comments change
+  useEffect(() => {
+    setUserStats(prev => ({
+      ...prev,
+      totalPosts: userPosts.length,
+      totalComments: userComments.length,
+    }));
+  }, [userPosts.length, userComments.length]);
 
   const handleEditProfile = () => {
     setShowEditModal(true);
@@ -107,41 +148,125 @@ const Profile = () => {
     }
   };
 
-  const PostCard = ({ post, showActions = true }) => (
-    <Card className="mb-3">
-      <Card.Header className={`bg-${post.type === 'notes' ? 'info' : post.type === 'jobs' ? 'success' : 'warning'} text-white`}>
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <i className={`fas ${post.type === 'notes' ? 'fa-sticky-note' : post.type === 'jobs' ? 'fa-briefcase' : 'fa-question-circle'} me-2`}></i>
-            {post.type.toUpperCase()}
-          </div>
-          <small>{new Date(post.created_at).toLocaleDateString()}</small>
-        </div>
-      </Card.Header>
-      <Card.Body>
-        <Card.Title>{post.title}</Card.Title>
-        <Card.Text style={{ maxHeight: '100px', overflow: 'hidden' }}>
-          {post.content}
-        </Card.Text>
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            {post.tags?.map((tag, index) => (
-              <Badge key={index} bg="secondary" className="me-1">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-          {showActions && (
+  const PostCard = ({ post, showActions = true, clickable = true }) => {
+    const [expanded, setExpanded] = useState(false);
+    
+    const handleCardClick = () => {
+      if (clickable) {
+        setExpanded(!expanded);
+      }
+    };
+
+    return (
+      <Card 
+        className={`mb-3 ${clickable ? 'shadow-hover' : ''}`}
+        style={{ 
+          cursor: clickable ? 'pointer' : 'default',
+          transition: 'all 0.3s ease',
+          border: '1px solid #e9ecef'
+        }}
+        onClick={handleCardClick}
+      >
+        <Card.Header className={`bg-${post.type === 'notes' ? 'info' : post.type === 'jobs' ? 'success' : 'warning'} text-white`}>
+          <div className="d-flex justify-content-between align-items-center">
             <div>
-              <Button variant="outline-danger" size="sm" onClick={() => handleDeletePost(post.post_id)}>
-                <i className="fas fa-trash"></i>
-              </Button>
+              <i className={`fas ${post.type === 'notes' ? 'fa-sticky-note' : post.type === 'jobs' ? 'fa-briefcase' : 'fa-question-circle'} me-2`}></i>
+              {post.type.toUpperCase()}
+            </div>
+            <small>{new Date(post.created_at).toLocaleDateString()}</small>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          <Card.Title style={{ color: '#495057' }}>{post.title}</Card.Title>
+          
+          <Card.Text 
+            style={{ 
+              maxHeight: expanded ? 'none' : '100px', 
+              overflow: expanded ? 'visible' : 'hidden',
+              color: '#6c757d',
+              lineHeight: '1.6'
+            }}
+          >
+            {post.content}
+          </Card.Text>
+          
+          {!expanded && post.content && post.content.length > 150 && (
+            <Button 
+              variant="link" 
+              size="sm" 
+              className="p-0 text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(true);
+              }}
+            >
+              Read more...
+            </Button>
+          )}
+
+          {expanded && post.file_url && (
+            <div className="mt-3 mb-3">
+              <img 
+                src={post.file_url} 
+                alt={post.title}
+                className="img-fluid rounded"
+                style={{ maxHeight: '300px', objectFit: 'contain' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
             </div>
           )}
-        </div>
-      </Card.Body>
-    </Card>
-  );
+          
+          <div className="d-flex justify-content-between align-items-center mt-3">
+            <div>
+              {post.tags?.map((tag, index) => (
+                <Badge 
+                  key={index} 
+                  style={{ 
+                    backgroundColor: '#f8f9fa', 
+                    color: '#667eea',
+                    border: '1px solid #dee2e6'
+                  }} 
+                  className="me-1"
+                >
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+            
+            <div className="d-flex gap-2">
+              {clickable && (
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpanded(!expanded);
+                  }}
+                >
+                  <i className={`fas fa-${expanded ? 'chevron-up' : 'chevron-down'}`}></i>
+                </Button>
+              )}
+              
+              {showActions && (
+                <Button 
+                  variant="outline-danger" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePost(post.post_id);
+                  }}
+                >
+                  <i className="fas fa-trash"></i>
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+    );
+  };
 
   const StatCard = ({ icon, title, value, color = "primary" }) => (
     <Card className="text-center h-100 border-0 shadow-sm">
@@ -180,10 +305,10 @@ const Profile = () => {
                       >
                         <i className="fas fa-user fa-3x text-primary"></i>
                       </div>
-                      <div className="text-white">
-                        <h2 className="fw-bold mb-1">{getCurrentUserEmail()}</h2>
-                        <p className="mb-0 opacity-75">Student & Collaborator</p>
-                      </div>
+                                             <div className="text-white">
+                         <h2 className="fw-bold mb-1">{getCurrentUserName()}</h2>
+                         <p className="mb-0 opacity-75">{getCurrentUserEmail()}</p>
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -213,20 +338,20 @@ const Profile = () => {
           <Col lg={12} className="mb-4">
             <Row>
               <Col md={3} className="mb-3">
-                <StatCard 
-                  icon="fa-file-alt" 
-                  title="Total Posts" 
-                  value={userPosts.length} 
-                  color="info"
-                />
-              </Col>
-              <Col md={3} className="mb-3">
-                <StatCard 
-                  icon="fa-comments" 
-                  title="Total Comments" 
-                  value={userComments.length} 
-                  color="success"
-                />
+                                 <StatCard 
+                   icon="fa-file-alt" 
+                   title="Total Posts" 
+                   value={userStats.totalPosts || userPosts.length} 
+                   color="info"
+                 />
+               </Col>
+               <Col md={3} className="mb-3">
+                 <StatCard 
+                   icon="fa-comments" 
+                   title="Total Comments" 
+                   value={userStats.totalComments || userComments.length} 
+                   color="success"
+                 />
               </Col>
               <Col md={3} className="mb-3">
                 <StatCard 
@@ -307,9 +432,9 @@ const Profile = () => {
                     {userPosts.length > 0 ? (
                       <>
                                                  <h6 style={{ color: '#6c757d' }}>Latest Posts</h6>
-                        {userPosts.slice(0, 3).map((post) => (
-                          <PostCard key={post.post_id} post={post} showActions={false} />
-                        ))}
+                                                 {userPosts.slice(0, 3).map((post) => (
+                           <PostCard key={post.post_id} post={post} showActions={false} clickable={true} />
+                         ))}
                         {userPosts.length > 3 && (
                           <div className="text-center mt-3">
                             <Button 
@@ -357,18 +482,68 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* Comments Tab */}
+                                {/* Comments Tab */}
                 {activeTab === 'comments' && (
                   <div>
-                                         <h5 className="mb-4" style={{ color: '#495057' }}>
-                       <i className="fas fa-comments me-2 text-primary"></i>
-                       My Comments ({userComments.length})
-                     </h5>
+                    <h5 className="mb-4" style={{ color: '#495057' }}>
+                      <i className="fas fa-comments me-2 text-primary"></i>
+                      My Comments ({userComments.length})
+                    </h5>
                     
-                    <Alert variant="info">
-                      <i className="fas fa-construction me-2"></i>
-                      Comments history feature coming soon! This will show all your comments across different posts.
-                    </Alert>
+                    {userComments.length > 0 ? (
+                      <div>
+                        {userComments.map((comment, index) => (
+                          <Card key={comment.comment_id || index} className="mb-3 shadow-sm">
+                            <Card.Body>
+                              <div className="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                  <h6 style={{ color: '#495057' }} className="mb-1">
+                                    <i className="fas fa-quote-left me-2 text-primary"></i>
+                                    Comment on: "{comment.post_title}"
+                                  </h6>
+                                  <small style={{ color: '#6c757d' }}>
+                                    <i className="fas fa-calendar-alt me-1"></i>
+                                    {comment.created_at ? new Date(comment.created_at).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }) : 'Just posted'}
+                                  </small>
+                                </div>
+                                <Button 
+                                  variant="outline-primary" 
+                                  size="sm"
+                                  onClick={() => window.location.href = `/home`}
+                                >
+                                  <i className="fas fa-external-link-alt me-1"></i>
+                                  View Post
+                                </Button>
+                              </div>
+                              
+                              <div 
+                                className="bg-light p-3 rounded mt-3"
+                                style={{ border: '1px solid #e9ecef' }}
+                              >
+                                <p className="mb-0" style={{ 
+                                  color: '#495057',
+                                  lineHeight: '1.6',
+                                  fontSize: '15px'
+                                }}>
+                                  {comment.content}
+                                </p>
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert variant="info">
+                        <i className="fas fa-comment-slash me-2"></i>
+                        You haven't made any comments yet. Start engaging with posts to see your comments here!
+                      </Alert>
+                    )}
                   </div>
                 )}
 
@@ -474,6 +649,14 @@ const Profile = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      
+      {/* Custom CSS for hover effects */}
+      <style jsx>{`
+        .shadow-hover:hover {
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          transform: translateY(-2px);
+        }
+      `}</style>
     </div>
   );
 };

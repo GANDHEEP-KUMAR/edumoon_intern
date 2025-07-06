@@ -31,9 +31,15 @@ function AuthForm(props) {
         }
         // Handle successful response
         else if (response.status === 200) {
-          // alert("Operation successful");
-          // Redirect or perform other actions as needed
+          // Store session token and user info
           localStorage.setItem("session_token", response.data.data.session_token);
+          localStorage.setItem("user_email", payload.email);
+          if (response.data.data.user_name) {
+            localStorage.setItem("user_name", response.data.data.user_name);
+          }
+          if (response.data.data.user_id) {
+            localStorage.setItem("user_id", response.data.data.user_id);
+          }
           window.location.href = "/home";
         }
       })

@@ -426,7 +426,7 @@ const Home = () => {
                     className="me-2 mb-2"
                     style={{
                       background: 'rgba(102, 126, 234, 0.1)',
-                      color: 'var(--primary-color)',
+                      color: '#667eea',
                       border: '1px solid rgba(102, 126, 234, 0.2)',
                       padding: '8px 16px',
                       borderRadius: '20px',
@@ -444,7 +444,7 @@ const Home = () => {
               <p style={{
                 fontSize: '16px',
                 lineHeight: '1.7',
-                color: 'var(--text-primary)',
+                color: '#495057',
                 marginBottom: '20px'
               }}>
                 {post.content}
@@ -496,7 +496,7 @@ const Home = () => {
 
           <Modal.Footer 
             style={{
-              background: 'var(--bg-secondary)',
+              background: '#f8f9fa',
               border: 'none',
               borderRadius: '0 0 20px 20px',
               padding: '20px 25px'
@@ -789,7 +789,14 @@ const Home = () => {
           <div className="row g-3 align-items-center">
             <div className="col-md-6">
               <div className="input-group">
-                <span className="input-group-text">
+                <span 
+                  className="input-group-text"
+                  style={{ 
+                    backgroundColor: '#fff',
+                    border: '1px solid #ced4da',
+                    color: '#667eea'
+                  }}
+                >
                   <i className="fas fa-search"></i>
                 </span>
                 <input
@@ -798,11 +805,19 @@ const Home = () => {
                   placeholder="Search posts, tags, or content..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    border: '1px solid #ced4da',
+                    color: '#495057'
+                  }}
                 />
                 {searchTerm && (
                   <button
                     className="btn btn-outline-secondary"
                     onClick={() => setSearchTerm('')}
+                    style={{
+                      color: '#6c757d',
+                      borderColor: '#ced4da'
+                    }}
                   >
                     <i className="fas fa-times"></i>
                   </button>
@@ -811,7 +826,7 @@ const Home = () => {
             </div>
             <div className="col-md-6">
               <div className="d-flex gap-2">
-                <span className="align-self-center me-2">Filter:</span>
+                <span className="align-self-center me-2" style={{ color: '#495057' }}>Filter:</span>
                 {['all', 'notes', 'jobs', 'queries'].map(type => (
                   <button
                     key={type}
