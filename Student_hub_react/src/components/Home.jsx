@@ -119,7 +119,6 @@ const Home = () => {
                 }}
                 className="rounded"
                 onError={(e) => {
-                  console.error('Image failed to load:', post.file_url);
                   e.target.style.display = 'none';
                 }}
               />
@@ -145,16 +144,11 @@ const Home = () => {
     const [comments, setComments] = useState([]);
     const [commentInput, setCommentInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showDebug, setShowDebug] = useState(true); // Set to false in production
 
     const fetchComments = async (post_id) => {
       setLoading(true);
-      console.log('🔍 Fetching comments for post ID:', post_id);
-      
       try {
         const url = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${post_id}`;
-        console.log('📡 Request URL:', url);
-        
         const response = await axios.get(url, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
@@ -162,30 +156,13 @@ const Home = () => {
           }
         });
         
-        console.log('✅ Full Comments Response:', response);
-        console.log('📋 Comments Data:', response.data);
-        console.log('📝 Comments Array:', response.data.data);
-        
         if (response.data.data && Array.isArray(response.data.data)) {
-          console.log('🔢 Number of comments:', response.data.data.length);
-          response.data.data.forEach((comment, index) => {
-            console.log(`💬 Comment ${index + 1}:`, {
-              id: comment.comment_id,
-              content: comment.content,
-              contentLength: comment.content?.length,
-              createdBy: comment.created_by,
-              createdAt: comment.created_at,
-              fullObject: comment
-            });
-          });
           setComments(response.data.data);
         } else {
-          console.warn('⚠️ No comments array found in response');
           setComments([]);
         }
       } catch (error) {
-        console.error('❌ Error fetching comments:', error);
-        console.error('❌ Error details:', error.response?.data);
+        console.error('Error fetching comments:', error);
         setComments([]);
       } finally {
         setLoading(false);
@@ -200,21 +177,12 @@ const Home = () => {
       }
       
       setLoading(true);
-      console.log('🚀 Adding comment:', {
-        postId: post_id,
-        content: commentInput,
-        contentLength: commentInput.length
-      });
-      
       try {
         const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comment/create`;
         const payload = {
           post_id: post_id,
           content: commentInput.trim(),
         };
-        
-        console.log('📤 Sending comment payload:', payload);
-        console.log('📡 Request URL:', url);
         
         const response = await axios.post(url, payload, {
           headers: {
@@ -223,20 +191,14 @@ const Home = () => {
           }
         });
         
-        console.log('✅ Comment creation response:', response);
-        
         if (response.status === 200 || response.status === 201) {
-          console.log('✅ Comment created successfully');
           setCommentInput('');
-          // Refresh comments after successful creation
           await fetchComments(post_id);
         } else {
-          console.error('❌ Unexpected response status:', response.status);
           alert('Failed to add comment. Please try again.');
         }
       } catch (error) {
-        console.error('❌ Error adding comment:', error);
-        console.error('❌ Error details:', error.response?.data);
+        console.error('Error adding comment:', error);
         alert('Error adding comment: ' + (error.response?.data?.detail || error.message));
       } finally {
         setLoading(false);
@@ -247,20 +209,9 @@ const Home = () => {
       if (postId) fetchComments(postId);
     }, [postId]);
 
-    return (
-      <div>
-        {/* Debug Summary */}
-        {showDebug && (
-          <div className="alert alert-info mb-3">
-            <strong>Debug Summary:</strong><br/>
-            Post ID: {postId}<br/>
-            Comments loaded: {comments.length}<br/>
-            Loading: {loading ? 'Yes' : 'No'}<br/>
-            API URL: {import.meta.env.VITE_SH_BE_URL}api/v1/post/by-post/{postId}
-          </div>
-        )}
-
-        <div className="mb-4">
+          return (
+        <div>
+          <div className="mb-4">
           <div className="card">
             <div className="card-body">
               <h6 className="card-title mb-3">
@@ -354,7 +305,7 @@ const Home = () => {
                              className="comment-content bg-white p-3 rounded border mt-2"
                            >
                              {comment.content ? (
-                               <p className="mb-0 text-dark" style={{ 
+                               <p className="mb-0 text-secondary" style={{ 
                                  fontSize: '15px', 
                                  lineHeight: '1.5',
                                  wordWrap: 'break-word'
@@ -367,33 +318,6 @@ const Home = () => {
                                </p>
                              )}
                            </div>
-                           
-                           {showDebug && (
-                             <div className="mt-2">
-                               <button 
-                                 className="btn btn-outline-secondary btn-sm"
-                                 onClick={() => setShowDebug(!showDebug)}
-                               >
-                                 Hide Debug
-                               </button>
-                               <small className="text-muted d-block mt-1">
-                                 <strong>Debug Info:</strong><br/>
-                                 Content: "{comment.content}"<br/>
-                                 Length: {comment.content?.length || 0}<br/>
-                                 ID: {comment.comment_id}<br/>
-                                 Type: {typeof comment.content}
-                               </small>
-                             </div>
-                           )}
-                           
-                           {!showDebug && (
-                             <button 
-                               className="btn btn-outline-secondary btn-sm mt-2"
-                               onClick={() => setShowDebug(true)}
-                             >
-                               Show Debug Info
-                             </button>
-                           )}
                         </div>
                       </div>
                     </div>
@@ -543,12 +467,10 @@ const Home = () => {
                   }}
                   className="hover-scale"
                   onError={(e) => {
-                    console.error('Modal image failed to load:', post.file_url);
                     e.target.parentElement.innerHTML = `
                       <div class="text-center p-4 bg-light rounded">
                         <i class="fas fa-image fa-3x text-muted mb-3"></i>
                         <p class="text-muted">Image could not be loaded</p>
-                        <small class="text-muted">URL: ${post.file_url}</small>
                       </div>
                     `;
                   }}
@@ -687,14 +609,6 @@ const Home = () => {
         formData.append('tags', JSON.stringify(postInput.tags));
         formData.append('file', postInput.file);
 
-        console.log('Submitting post data:', {
-          type: postInput.type,
-          title: postInput.title,
-          content: postInput.content,
-          tags: postInput.tags,
-          fileName: postInput.file?.name
-        });
-
         const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post/create';
         const response = await axios.post(url, formData, {
           headers: {
@@ -703,7 +617,6 @@ const Home = () => {
           }
         });
         
-        console.log('Post created successfully:', response.data);
         alert('Post created successfully!');
         
         // Reset form

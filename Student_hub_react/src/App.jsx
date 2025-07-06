@@ -1,6 +1,7 @@
 import Navigationbar from './components/navigationbar'
 import AuthForm from './components/Authentication'; 
 import Home from './components/Home';
+import Profile from './components/Profile';
 import {
     Routes,
     Route,
@@ -18,6 +19,7 @@ function App() {
               <Route path="/sign-up" element={<AuthForm islogin = {false} />} />
               <Route path="/login" element={<AuthForm islogin = {true} />} />
               <Route path="/home" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
           </Routes>
           </>
 

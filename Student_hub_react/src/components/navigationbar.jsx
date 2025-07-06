@@ -53,7 +53,7 @@ function Navigationbar() {
                   to="/home"
                   className="nav-link-modern me-3"
                   style={{
-                    color: 'var(--text-primary)',
+                    color: '#495057',
                     fontWeight: '500',
                     padding: '12px 20px',
                     borderRadius: '10px',
@@ -116,7 +116,7 @@ function Navigationbar() {
                       border: '2px solid rgba(102, 126, 234, 0.2)',
                       borderRadius: '12px',
                       padding: '10px 16px',
-                      color: 'var(--primary-color)',
+                      color: '#667eea',
                       fontWeight: '500',
                       transition: 'all 0.3s ease'
                     }}
@@ -148,19 +148,37 @@ function Navigationbar() {
                     }}
                   >
                     <li>
-                      <a 
+                      <Link 
+                        to="/profile"
                         className="dropdown-item d-flex align-items-center"
-                        href="#"
                         style={{
                           borderRadius: '8px',
                           padding: '12px 16px',
                           transition: 'all 0.3s ease',
-                          color: 'var(--text-primary)'
+                          color: '#495057',
+                          textDecoration: 'none'
                         }}
                       >
-                        <i className="fas fa-user-cog me-3 text-primary"></i>
-                        Profile Settings
-                      </a>
+                        <i className="fas fa-user-circle me-3 text-primary"></i>
+                        My Profile
+                      </Link>
+                    </li>
+                    <li>
+                      <Link 
+                        to="/profile"
+                        className="dropdown-item d-flex align-items-center"
+                        style={{
+                          borderRadius: '8px',
+                          padding: '12px 16px',
+                          transition: 'all 0.3s ease',
+                          color: '#495057',
+                          textDecoration: 'none'
+                        }}
+                        onClick={() => window.location.href = '/profile?tab=settings'}
+                      >
+                        <i className="fas fa-cog me-3 text-secondary"></i>
+                        Settings
+                      </Link>
                     </li>
                     <li><hr className="dropdown-divider" style={{ margin: '8px 0', opacity: 0.2 }} /></li>
                     <li>
@@ -171,7 +189,7 @@ function Navigationbar() {
                           borderRadius: '8px',
                           padding: '12px 16px',
                           transition: 'all 0.3s ease',
-                          color: 'var(--danger-color)',
+                          color: '#dc3545',
                           border: 'none',
                           background: 'none',
                           width: '100%'
@@ -192,12 +210,12 @@ function Navigationbar() {
       <style jsx>{`
         .dropdown-item:hover {
           background: rgba(102, 126, 234, 0.1) !important;
-          color: var(--primary-color) !important;
+          color: #667eea !important;
         }
         
         .nav-link-modern:hover {
           background: rgba(102, 126, 234, 0.1);
-          color: var(--primary-color) !important;
+          color: #667eea !important;
           transform: translateY(-2px);
         }
       `}</style>

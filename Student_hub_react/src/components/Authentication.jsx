@@ -23,7 +23,7 @@ function AuthForm(props) {
     setLoader(true);
     axios.post(url, payload)
       .then(response => {
-        console.log("Response from API:", response.data);
+
         if (!islogin && response.status === 200) {
           alert("Sign-up successful");
           // Redirect or perform other actions as needed
@@ -48,7 +48,6 @@ function AuthForm(props) {
   }
 
   const handleformsubmit = (input) => {
-    console.log(import.meta.env.VITE_SH_BE_URL);
     if (islogin) {
       // Handle login logic here
       if (!input.email || !input.password) {
@@ -69,7 +68,6 @@ function AuthForm(props) {
       }
       triggerAPI(input);
     }
-
   }
   if (isAuthenticated) {
     window.location.href = "/home";
@@ -214,7 +212,6 @@ function AuthForm(props) {
                     style={{ fontSize: '16px', borderRadius: '12px' }}
                     onClick={(e) => {
                       e.preventDefault();
-                      console.log("Form submitted with data:", input);
                       handleformsubmit(input);
                     }}
                     disabled={loader}
