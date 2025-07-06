@@ -16,48 +16,21 @@ function Navigationbar() {
     <>
       <Navbar 
         expand="lg" 
-        className="navbar-glass py-3 animate-slide-down"
+        className="navbar-light bg-white py-2 shadow-sm"
         style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
           position: 'sticky',
           top: 0,
-          zIndex: 1000,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          zIndex: 1000
         }}
       >
         <Container>
           <Navbar.Brand 
             as={Link} 
             to="/home" 
-            className="d-flex align-items-center fw-bold"
-            style={{
-              fontSize: '28px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textDecoration: 'none',
-              transition: 'all 0.3s ease'
-            }}
+            className="d-flex align-items-center fw-bold text-primary"
           >
-            <div className="d-flex align-items-center">
-              <div 
-                className="me-3 d-flex align-items-center justify-content-center"
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '18px'
-                }}
-              >
-                <i className="fas fa-graduation-cap"></i>
-              </div>
-              StudentHub
-            </div>
+            <i className="fas fa-graduation-cap me-2 fs-4"></i>
+            StudentHub
           </Navbar.Brand>
 
           <Navbar.Toggle 
