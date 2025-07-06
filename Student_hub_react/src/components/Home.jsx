@@ -19,7 +19,7 @@ const Home = () => {
   const fetchPosts = async () => {
     setLoader(true);
     try {
-      const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post';
+      const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post/all';
       const response = await axios.get(url, {
         headers: {
           Authorization: localStorage.getItem('session_token'),
@@ -67,7 +67,7 @@ const Home = () => {
     const fetchComments = async (post_id) => {
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comments/by-post/${post_id}`;
+        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${post_id}`;
         const response = await axios.get(url, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
@@ -87,7 +87,7 @@ const Home = () => {
       if (!commentInput.trim()) return;
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comments/create`;
+        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comment/create`;
         const payload = {
           post_id: post_id,
           content: commentInput,
