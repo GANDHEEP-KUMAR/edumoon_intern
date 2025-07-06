@@ -145,22 +145,48 @@ const Home = () => {
     const [comments, setComments] = useState([]);
     const [commentInput, setCommentInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showDebug, setShowDebug] = useState(true); // Set to false in production
 
     const fetchComments = async (post_id) => {
       setLoading(true);
+      console.log('🔍 Fetching comments for post ID:', post_id);
+      
       try {
         const url = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${post_id}`;
+        console.log('📡 Request URL:', url);
+        
         const response = await axios.get(url, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
             'Content-Type': 'application/json',
           }
         });
-        console.log('Comments response:', response.data); // Debug log
-        setComments(response.data.data || []);
+        
+        console.log('✅ Full Comments Response:', response);
+        console.log('📋 Comments Data:', response.data);
+        console.log('📝 Comments Array:', response.data.data);
+        
+        if (response.data.data && Array.isArray(response.data.data)) {
+          console.log('🔢 Number of comments:', response.data.data.length);
+          response.data.data.forEach((comment, index) => {
+            console.log(`💬 Comment ${index + 1}:`, {
+              id: comment.comment_id,
+              content: comment.content,
+              contentLength: comment.content?.length,
+              createdBy: comment.created_by,
+              createdAt: comment.created_at,
+              fullObject: comment
+            });
+          });
+          setComments(response.data.data);
+        } else {
+          console.warn('⚠️ No comments array found in response');
+          setComments([]);
+        }
       } catch (error) {
-        console.error('Error fetching comments:', error);
-        alert('Error loading comments: ' + error.message);
+        console.error('❌ Error fetching comments:', error);
+        console.error('❌ Error details:', error.response?.data);
+        setComments([]);
       } finally {
         setLoading(false);
       }
@@ -168,30 +194,52 @@ const Home = () => {
 
     const addComment = async (e, post_id) => {
       e.preventDefault();
-      if (!commentInput.trim()) return;
+      if (!commentInput.trim()) {
+        alert('Please enter a comment');
+        return;
+      }
+      
       setLoading(true);
+      console.log('🚀 Adding comment:', {
+        postId: post_id,
+        content: commentInput,
+        contentLength: commentInput.length
+      });
+      
       try {
         const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comment/create`;
         const payload = {
           post_id: post_id,
-          content: commentInput,
+          content: commentInput.trim(),
         };
+        
+        console.log('📤 Sending comment payload:', payload);
+        console.log('📡 Request URL:', url);
+        
         const response = await axios.post(url, payload, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
             'Content-Type': 'application/json',
           }
         });
-        if (response.status === 200) {
-          fetchComments(post_id);
+        
+        console.log('✅ Comment creation response:', response);
+        
+        if (response.status === 200 || response.status === 201) {
+          console.log('✅ Comment created successfully');
+          setCommentInput('');
+          // Refresh comments after successful creation
+          await fetchComments(post_id);
         } else {
-          console.error('Failed to add comment:', response);
+          console.error('❌ Unexpected response status:', response.status);
+          alert('Failed to add comment. Please try again.');
         }
       } catch (error) {
-        console.error('Error adding comment:', error);
+        console.error('❌ Error adding comment:', error);
+        console.error('❌ Error details:', error.response?.data);
+        alert('Error adding comment: ' + (error.response?.data?.detail || error.message));
       } finally {
         setLoading(false);
-        setCommentInput('');
       }
     };
 
@@ -201,128 +249,162 @@ const Home = () => {
 
     return (
       <div>
+        {/* Debug Summary */}
+        {showDebug && (
+          <div className="alert alert-info mb-3">
+            <strong>Debug Summary:</strong><br/>
+            Post ID: {postId}<br/>
+            Comments loaded: {comments.length}<br/>
+            Loading: {loading ? 'Yes' : 'No'}<br/>
+            API URL: {import.meta.env.VITE_SH_BE_URL}api/v1/post/by-post/{postId}
+          </div>
+        )}
+
         <div className="mb-4">
-          <InputGroup className="shadow-sm">
-            <Form.Control
-              placeholder="Share your thoughts on this post..."
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              style={{
-                borderRadius: '25px 0 0 25px',
-                padding: '12px 20px',
-                fontSize: '15px',
-                border: '2px solid #e9ecef'
-              }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  addComment(e, postId);
-                }
-              }}
-            />
-            <Button 
-              className="btn-gradient"
-              onClick={(e) => addComment(e, postId)}
-              disabled={loading || !commentInput.trim()}
-              style={{
-                borderRadius: '0 25px 25px 0',
-                padding: '12px 24px',
-                fontWeight: '600'
-              }}
-            >
-              {loading ? (
-                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-              ) : (
-                <i className="fas fa-paper-plane me-2"></i>
-              )}
-              Comment
-            </Button>
-          </InputGroup>
-          <small className="text-muted mt-2 d-block">
-            <i className="fas fa-info-circle me-1"></i>
-            Press Enter to post your comment
-          </small>
+          <div className="card">
+            <div className="card-body">
+              <h6 className="card-title mb-3">
+                <i className="fas fa-comment me-2"></i>
+                Add a Comment
+              </h6>
+              <div className="input-group">
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  placeholder="Write your comment here..."
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  style={{ resize: 'none' }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      addComment(e, postId);
+                    }
+                  }}
+                />
+              </div>
+              <div className="d-flex justify-content-between align-items-center mt-2">
+                <small className="text-muted">
+                  Press Enter to post your comment
+                </small>
+                <Button 
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => addComment(e, postId)}
+                  disabled={loading || !commentInput.trim()}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-paper-plane me-1"></i>
+                      Post Comment
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-4">
-            <div className="spinner-border text-primary mb-3" role="status">
+          <div className="text-center py-3">
+            <div className="spinner-border text-primary" role="status">
               <span className="visually-hidden">Loading comments...</span>
             </div>
-            <p className="text-muted">Loading comments...</p>
           </div>
         ) : (
-          <div className="comments-container">
+          <div className="comments-list">
             {comments?.length > 0 ? (
-              <div className="space-y-3">
+              <div>
                 {comments.map((comment, index) => (
                   <div 
-                    key={index} 
-                    className="comment-item p-3 animate-fade-in"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.8)',
-                      borderRadius: '16px',
-                      border: '1px solid rgba(0, 0, 0, 0.08)',
-                      marginBottom: '12px',
-                      transition: 'all 0.3s ease',
-                      animationDelay: `${index * 0.1}s`
-                    }}
+                    key={comment.comment_id || index} 
+                    className="card mb-3"
+                    style={{ backgroundColor: '#f8f9fa' }}
                   >
-                    <div className="d-flex align-items-start">
-                      <div 
-                        className="me-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{
-                          width: '44px',
-                          height: '44px',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          borderRadius: '12px',
-                          color: 'white',
-                          fontSize: '16px'
-                        }}
-                      >
-                        <i className="fas fa-user"></i>
-                      </div>
-                      
-                      <div className="flex-grow-1">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
-                          <div>
-                            <h6 className="mb-1 fw-bold text-primary" style={{ fontSize: '14px' }}>
-                              {comment.created_by}
+                    <div className="card-body p-3">
+                      <div className="d-flex align-items-start">
+                        <div 
+                          className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                          style={{ width: '40px', height: '40px', flexShrink: 0 }}
+                        >
+                          <i className="fas fa-user"></i>
+                        </div>
+                        
+                        <div className="flex-grow-1">
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <h6 className="mb-0 text-primary fw-bold">
+                              {comment.created_by || 'Anonymous'}
                             </h6>
-                            <small className="text-muted d-flex align-items-center">
-                              <i className="fas fa-clock me-1"></i>
-                              {new Date(comment.created_at).toLocaleDateString('en-US', {
+                            <small className="text-muted">
+                              {comment.created_at ? new Date(comment.created_at).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit'
-                              })}
+                              }) : 'Just now'}
                             </small>
                           </div>
+                          
+                                                     <div 
+                             className="comment-content bg-white p-3 rounded border mt-2"
+                           >
+                             {comment.content ? (
+                               <p className="mb-0 text-dark" style={{ 
+                                 fontSize: '15px', 
+                                 lineHeight: '1.5',
+                                 wordWrap: 'break-word'
+                               }}>
+                                 {comment.content}
+                               </p>
+                             ) : (
+                               <p className="mb-0 text-muted fst-italic">
+                                 [No comment content available]
+                               </p>
+                             )}
+                           </div>
+                           
+                           {showDebug && (
+                             <div className="mt-2">
+                               <button 
+                                 className="btn btn-outline-secondary btn-sm"
+                                 onClick={() => setShowDebug(!showDebug)}
+                               >
+                                 Hide Debug
+                               </button>
+                               <small className="text-muted d-block mt-1">
+                                 <strong>Debug Info:</strong><br/>
+                                 Content: "{comment.content}"<br/>
+                                 Length: {comment.content?.length || 0}<br/>
+                                 ID: {comment.comment_id}<br/>
+                                 Type: {typeof comment.content}
+                               </small>
+                             </div>
+                           )}
+                           
+                           {!showDebug && (
+                             <button 
+                               className="btn btn-outline-secondary btn-sm mt-2"
+                               onClick={() => setShowDebug(true)}
+                             >
+                               Show Debug Info
+                             </button>
+                           )}
                         </div>
-                        
-                        <p 
-                          className="mb-0"
-                          style={{
-                            fontSize: '15px',
-                            lineHeight: '1.5',
-                            color: 'var(--text-primary)'
-                          }}
-                        >
-                          {comment.content}
-                        </p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-5">
-                <div className="mb-3">
-                  <i className="fas fa-comments fa-3x text-muted"></i>
-                </div>
-                <h6 className="text-muted mb-2">No comments yet</h6>
-                <p className="text-muted small mb-0">Be the first to share your thoughts!</p>
+              <div className="text-center py-4">
+                <i className="fas fa-comments fa-3x text-muted mb-3"></i>
+                <h6 className="text-muted">No comments yet</h6>
+                <p className="text-muted">Be the first to share your thoughts!</p>
               </div>
             )}
           </div>
@@ -474,13 +556,18 @@ const Home = () => {
               </div>
             )}
 
-            <hr style={{ margin: '30px 0', opacity: 0.3 }} />
+            <hr className="my-4" />
             
-            <div>
-              <h5 className="mb-4 d-flex align-items-center">
-                <i className="fas fa-comments me-2 text-primary"></i>
-                Comments & Discussion
-              </h5>
+            <div className="comments-section">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h5 className="mb-0 d-flex align-items-center">
+                  <i className="fas fa-comments me-2 text-primary"></i>
+                  Comments & Discussion
+                </h5>
+                <span className="badge bg-secondary">
+                  Post ID: {post.post_id}
+                </span>
+              </div>
               <PostComments postId={post.post_id} />
             </div>
           </Modal.Body>
