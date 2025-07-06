@@ -8,7 +8,7 @@ import Loader from './Loaders'; // Assuming you have a Loader component for load
 function AuthForm(props) {
   const { islogin } = props;
   const [input, setInput] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
     bio: ''
@@ -69,7 +69,7 @@ function AuthForm(props) {
         alert("Passwords do not match");
         return;
       }
-      if (!input.name || !input.email || !input.password) {
+      if (!input.username || !input.email || !input.password) {
         alert("Name, Email, and Password are required");
         return;
       }
@@ -145,8 +145,8 @@ function AuthForm(props) {
                       <Form.Control 
                         type="text" 
                         placeholder="Enter your full name" 
-                        value={input.name} 
-                        onChange={(e) => setInput((prev) => ({ ...prev, name: e.target.value }))}
+                        value={input.username} 
+                        onChange={(e) => setInput((prev) => ({ ...prev, username: e.target.value }))}
                         className="form-control-lg"
                         style={{ 
                           borderRadius: '12px', 

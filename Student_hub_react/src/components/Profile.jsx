@@ -17,13 +17,34 @@ const Profile = () => {
     joinDate: ''
   });
 
+  // Helper to decode JWT payload (base64)
+  const decodeJWT = (token) => {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded;
+    } catch {
+      return {};
+    }
+  };
+
   // Get user info from session
   const getCurrentUserEmail = () => {
-    return localStorage.getItem('user_email') || 'Current User';
+    const stored = localStorage.getItem('user_email');
+    if (stored) return stored;
+    const token = localStorage.getItem('session_token');
+    if (token) {
+      const decoded = decodeJWT(token);
+      if (decoded?.email) {
+        localStorage.setItem('user_email', decoded.email);
+        return decoded.email;
+      }
+    }
+    return 'Current User';
   };
 
   const getCurrentUserName = () => {
-    return localStorage.getItem('user_name') || localStorage.getItem('username') || localStorage.getItem('user_email') || 'Current User';
+    return localStorage.getItem('user_name') || localStorage.getItem('username') || getCurrentUserEmail();
   };
 
   useEffect(() => {
@@ -37,6 +58,12 @@ const Profile = () => {
       await fetchUserPosts();
       await fetchUserComments();
       await fetchUserStats();
+      // force update stats after data
+      setUserStats(prev => ({
+        ...prev,
+        totalPosts: userPosts.length,
+        totalComments: userComments.length,
+      }));
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
