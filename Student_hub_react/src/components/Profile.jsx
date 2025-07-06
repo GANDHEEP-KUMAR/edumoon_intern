@@ -56,14 +56,15 @@ const Profile = () => {
     try {
       // First fetch posts, then comments (which depend on posts), then stats
       await fetchUserPosts();
-      await fetchUserComments();
-      await fetchUserStats();
-      // force update stats after data
-      setUserStats(prev => ({
-        ...prev,
+      const commentsArr = await fetchUserComments();
+      setUserComments(commentsArr);
+      // compute stats using up-to-date lengths
+      setUserStats({
         totalPosts: userPosts.length,
-        totalComments: userComments.length,
-      }));
+        totalComments: commentsArr.length,
+        joinDate: new Date().toLocaleDateString(),
+        lastActive: 'Today'
+      });
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -109,10 +110,10 @@ const Profile = () => {
 
       const commentsNested = await Promise.all(commentPromises);
       const flatComments = commentsNested.flat();
-      setUserComments(flatComments);
+      return flatComments;
     } catch (error) {
       console.error('Error fetching user comments:', error);
-      setUserComments([]);
+      return [];
     }
   };
 
