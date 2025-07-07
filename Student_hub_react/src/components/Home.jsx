@@ -13,13 +13,16 @@ import Loader from './Loaders';
 const Home = () => {
   const [loader, setLoader] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [filteredPosts, setFilteredPosts] = useState([]);
   const [selectedPost, setSelectedPost] = useState(null);
   const [createPostModal, setCreatePostModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   const fetchPosts = async () => {
     setLoader(true);
     try {
-      const url = import.meta.env.VITE_SH_BE_URI + 'api/v1/post';
+      const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post/all';
       const response = await axios.get(url, {
         headers: {
           Authorization: localStorage.getItem('session_token'),
@@ -27,6 +30,7 @@ const Home = () => {
         }
       });
       setPosts(response.data.data);
+      setFilteredPosts(response.data.data);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -34,25 +38,111 @@ const Home = () => {
     }
   };
 
+  // Filter and search logic
+  useEffect(() => {
+    let filtered = posts;
+
+    // Filter by type
+    if (filterType !== 'all') {
+      filtered = filtered.filter(post => post.type === filterType);
+    }
+
+    // Search in title and content
+    if (searchTerm) {
+      filtered = filtered.filter(post => 
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    setFilteredPosts(filtered);
+  }, [posts, searchTerm, filterType]);
+
   useEffect(() => {
     fetchPosts();
   }, []);
 
   const PostCard = ({ post }) => {
+    const getTypeIcon = (type) => {
+      switch (type) {
+        case 'notes': return 'fas fa-sticky-note';
+        case 'jobs': return 'fas fa-briefcase';
+        case 'queries': return 'fas fa-question-circle';
+        default: return 'fas fa-file-alt';
+      }
+    };
+
+    const getTypeColor = (type) => {
+      switch (type) {
+        case 'notes': return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+        case 'jobs': return 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+        case 'queries': return 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+        default: return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      }
+    };
+
     return (
-      <Card className='mb-4'>
-        <Card.Header as="h5">{post.type}</Card.Header>
+      <Card
+        className="mb-4 post-card"
+        style={{
+          background: '#fff',
+          borderRadius: '20px',
+          boxShadow: '0 4px 24px rgba(102,126,234,0.08)',
+          border: 'none',
+          color: '#222'
+        }}
+      >
+        <Card.Header className={`bg-${post.type === 'notes' ? 'info' : post.type === 'jobs' ? 'success' : 'warning'} text-white`}>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <i className={`${getTypeIcon(post.type)} me-2`}></i>
+              {post.type.toUpperCase()}
+            </div>
+            <small>{new Date(post.created_at).toLocaleDateString()}</small>
+          </div>
+        </Card.Header>
+        
         <Card.Body>
           <Card.Title>{post.title}</Card.Title>
-          <Card.Text>
+          <Card.Text 
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: '3',
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
+          >
             {post.content}
           </Card.Text>
-          <div className='d-flex justify-content-between align-items-center mb-2'>
+
+          {post.file_url && (
+            <div className="mb-3">
+              <img 
+                src={post.file_url} 
+                alt={post.title}
+                style={{
+                  width: '100%',
+                  height: '150px',
+                  objectFit: 'cover'
+                }}
+                className="rounded"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+          
+          <div className='d-flex justify-content-between align-items-end'>
             <div>
               {post?.tags?.map((tag, index) => (
-                <Badge className='me-2' pill={true} key={index} bg="secondary">{tag}</Badge>
+                <span key={index} className="custom-tag">
+                  {tag}
+                </span>
               ))}
             </div>
+            <small style={{ color: '#6c757d', fontWeight: 500 }}>{post.created_by}</small>
           </div>
         </Card.Body>
       </Card>
@@ -67,16 +157,22 @@ const Home = () => {
     const fetchComments = async (post_id) => {
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_SH_BE_URI + `api/v1/post/by-user${post_id}`;
+        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/post/by-post/${post_id}`;
         const response = await axios.get(url, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
             'Content-Type': 'application/json',
           }
         });
-        setComments(response.data.data);
+        
+        if (response.data.data && Array.isArray(response.data.data)) {
+          setComments(response.data.data);
+        } else {
+          setComments([]);
+        }
       } catch (error) {
         console.error('Error fetching comments:', error);
+        setComments([]);
       } finally {
         setLoading(false);
       }
@@ -84,30 +180,37 @@ const Home = () => {
 
     const addComment = async (e, post_id) => {
       e.preventDefault();
-      if (!commentInput.trim()) return;
+      if (!commentInput.trim()) {
+        alert('Please enter a comment');
+        return;
+      }
+      
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_SH_BE_URI + `api/v1/comments/create`;
+        const url = import.meta.env.VITE_SH_BE_URL + `api/v1/comment/create`;
         const payload = {
           post_id: post_id,
-          content: commentInput,
+          content: commentInput.trim(),
         };
+        
         const response = await axios.post(url, payload, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
             'Content-Type': 'application/json',
           }
         });
-        if (response.status === 200) {
-          fetchComments(post_id);
+        
+        if (response.status === 200 || response.status === 201) {
+          setCommentInput('');
+          await fetchComments(post_id);
         } else {
-          console.error('Failed to add comment:', response);
+          alert('Failed to add comment. Please try again.');
         }
       } catch (error) {
         console.error('Error adding comment:', error);
+        alert('Error adding comment: ' + (error.response?.data?.detail || error.message));
       } finally {
         setLoading(false);
-        setCommentInput('');
       }
     };
 
@@ -115,50 +218,356 @@ const Home = () => {
       if (postId) fetchComments(postId);
     }, [postId]);
 
-    return (
-      <div>
-        <InputGroup className="mt-3">
-          <Form.Control
-            aria-label="Default"
-            aria-describedby="inputGroup-sizing-default"
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-          />
-          <Button variant="primary" onClick={(e) => addComment(e, postId)}>Comment</Button>
-        </InputGroup>
-        {loading ? <div>Loading comments...</div> : (
-          <ListGroup>
-            {comments?.map((comment, index) => (
-              <ListGroup.Item key={index} className="d-flex align-items-center">
-                <div style={{ borderRight: '1px solid #ddd', paddingRight: '10px', marginRight: '10px', width: '150px' }}>
-                  <div className="comment-content">{comment.created_by}</div>
-                  <strong>{comment.author}</strong> <span className="text-muted">{new Date(comment.created_at).toLocaleString()}</span>
-                </div>
-                <div>{comment.content}</div>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          return (
+        <div>
+          <div className="mb-4">
+          <div className="card">
+            <div className="card-body">
+              <h6 className="card-title mb-3">
+                <i className="fas fa-comment me-2"></i>
+                Add a Comment
+              </h6>
+              <div className="input-group">
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  placeholder="Write your comment here..."
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  style={{ resize: 'none' }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      addComment(e, postId);
+                    }
+                  }}
+                />
+              </div>
+              <div className="d-flex justify-content-between align-items-center mt-2">
+                <small className="text-muted">
+                  Press Enter to post your comment
+                </small>
+                <Button 
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => addComment(e, postId)}
+                  disabled={loading || !commentInput.trim()}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-paper-plane me-1"></i>
+                      Post Comment
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-3">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading comments...</span>
+            </div>
+          </div>
+        ) : (
+          <div className="comments-list">
+            {comments?.length > 0 ? (
+              <div>
+                {comments.map((comment, index) => (
+                  <div 
+                    key={comment.comment_id || index} 
+                    className="card mb-3"
+                    style={{ backgroundColor: '#f8f9fa' }}
+                  >
+                    <div className="card-body p-3">
+                      <div className="d-flex align-items-start">
+                        <div 
+                          className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                          style={{ width: '40px', height: '40px', flexShrink: 0 }}
+                        >
+                          <i className="fas fa-user"></i>
+                        </div>
+                        
+                        <div className="flex-grow-1">
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <h6 className="mb-0 text-primary fw-bold">
+                              {comment.created_by || 'Anonymous'}
+                            </h6>
+                            <small className="text-muted">
+                              {comment.created_at ? new Date(comment.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : 'Just now'}
+                            </small>
+                          </div>
+                          
+                                                     <div 
+                             className="comment-content bg-white p-3 rounded border mt-2"
+                           >
+                             {comment.content ? (
+                               <p className="mb-0 text-secondary" style={{ 
+                                 fontSize: '15px', 
+                                 lineHeight: '1.5',
+                                 wordWrap: 'break-word'
+                               }}>
+                                 {comment.content}
+                               </p>
+                             ) : (
+                               <p className="mb-0 text-muted fst-italic">
+                                 [No comment content available]
+                               </p>
+                             )}
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <i className="fas fa-comments fa-3x text-muted mb-3"></i>
+                <h6 className="text-muted">No comments yet</h6>
+                <p className="text-muted">Be the first to share your thoughts!</p>
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
   };
 
   const PostModal = ({ post }) => {
+    const getTypeColor = (type) => {
+      switch (type) {
+        case 'notes': return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+        case 'jobs': return 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+        case 'queries': return 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+        default: return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      }
+    };
+
+    const handleDownload = async (url, filename) => {
+      try {
+        const response = await fetch(url, { mode: 'cors' });
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename || url.split('/').pop();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
+      } catch (err) {
+        alert('Failed to download file.');
+      }
+    };
+
     return (
       <>
-        <Modal show={post} onHide={() => setSelectedPost(null)} size="lg" centered enforceFocus={false}>
-          <Modal.Header closeButton>
-            <Modal.Title>{post.title}</Modal.Title>
+        <Modal 
+          show={post} 
+          onHide={() => setSelectedPost(null)} 
+          size="lg" 
+          centered 
+          enforceFocus={false}
+          className="animate-scale-in"
+        >
+          <Modal.Header 
+            closeButton
+            style={{
+              background: getTypeColor(post.type),
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px 20px 0 0'
+            }}
+          >
+            <Modal.Title className="d-flex align-items-center fw-bold">
+              <div 
+                className="me-3 d-flex align-items-center justify-content-center"
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  fontSize: '18px'
+                }}
+              >
+                <i className={`fas ${post.type === 'notes' ? 'fa-sticky-note' : post.type === 'jobs' ? 'fa-briefcase' : 'fa-question-circle'}`}></i>
+              </div>
+              {post.title}
+            </Modal.Title>
           </Modal.Header>
-          <Modal.Body className="overflow-auto" style={{ maxHeight: '60vh' }}>
-            <p>{post.content}</p>
-            <Image src={post.file_url} height={400} alt={post.title} fluid />
-            <PostComments postId={post.post_id} />
+
+          <Modal.Body 
+            className="overflow-auto p-4" 
+            style={{ 
+              maxHeight: '70vh',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)'
+            }}
+          >
+            <div className="mb-4">
+              <div className="d-flex align-items-center mb-3">
+                <div 
+                  className="me-3 d-flex align-items-center justify-content-center"
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    background: getTypeColor(post.type),
+                    borderRadius: '12px',
+                    color: 'white'
+                  }}
+                >
+                  <i className="fas fa-user"></i>
+                </div>
+                <div>
+                  <h6 className="mb-1 fw-bold text-primary">{post.created_by}</h6>
+                  <small className="text-muted">
+                    <i className="fas fa-calendar-alt me-1"></i>
+                    {new Date(post.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </small>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                {post?.tags?.map((tag, index) => (
+                  <Badge 
+                    key={index}
+                    className="me-2 mb-2"
+                    style={{
+                      background: 'rgba(102, 126, 234, 0.1)',
+                      color: '#667eea',
+                      border: '1px solid rgba(102, 126, 234, 0.2)',
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      fontSize: '13px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <p style={{
+                fontSize: '16px',
+                lineHeight: '1.7',
+                color: '#495057',
+                marginBottom: '20px'
+              }}>
+                {post.content}
+              </p>
+            </div>
+
+            {post.file_url && (
+              <div className="mb-4">
+                {/* Preview for images */}
+                {/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(post.file_url) ? (
+                  <Image 
+                    src={post.file_url} 
+                    alt={post.title} 
+                    fluid
+                    style={{
+                      borderRadius: '16px',
+                      maxHeight: '400px',
+                      width: '100%',
+                      objectFit: 'contain',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                      backgroundColor: '#f8f9fa'
+                    }}
+                    className="hover-scale"
+                    onError={(e) => {
+                      e.target.parentElement.innerHTML = `
+                        <div class='text-center p-4 bg-light rounded'>
+                          <i class='fas fa-image fa-3x text-muted mb-3'></i>
+                          <p class='text-muted'>Image could not be loaded</p>
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : null}
+
+                {/* Preview for PDF */}
+                {/\.pdf$/i.test(post.file_url) ? (
+                  <iframe
+                    src={post.file_url}
+                    title="PDF Preview"
+                    style={{ width: '100%', height: '400px', borderRadius: '12px', border: '1px solid #e9ecef', background: '#fff' }}
+                  />
+                ) : null}
+
+                {/* Download/Open buttons for all files */}
+                <div className="mt-2 d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-gradient"
+                    onClick={() => handleDownload(post.file_url, post.title || 'download')}
+                  >
+                    <i className="fas fa-download me-2"></i>Download
+                  </button>
+                  <a
+                    href={post.file_url}
+                    className="btn btn-gradient"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i className="fas fa-external-link-alt me-2"></i>Open
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <hr className="my-4" />
+            
+            <div className="comments-section">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h5 className="mb-0 d-flex align-items-center">
+                  <i className="fas fa-comments me-2 text-primary"></i>
+                  Comments & Discussion
+                </h5>
+              </div>
+              <PostComments postId={post.post_id} />
+            </div>
           </Modal.Body>
-          <Modal.Footer className='d-flex justify-content-between'>
-            <Button variant="secondary" onClick={() => setSelectedPost(null)}>
-              Close
-            </Button>
+
+          <Modal.Footer 
+            style={{
+              background: '#f8f9fa',
+              border: 'none',
+              borderRadius: '0 0 20px 20px',
+              padding: '20px 25px'
+            }}
+          >
+            <div className="d-flex w-100 justify-content-between align-items-center">
+              <div className="d-flex align-items-center text-muted">
+                <i className="fas fa-eye me-2"></i>
+                <small>Post Details</small>
+              </div>
+              <Button 
+                className="btn-outline-gradient"
+                onClick={() => setSelectedPost(null)}
+              >
+                <i className="fas fa-times me-2"></i>
+                Close
+              </Button>
+            </div>
           </Modal.Footer>
         </Modal>
       </>
@@ -192,18 +601,17 @@ const Home = () => {
     };
 
     const handleTagInputChange = (e) => {
-      setTagInput(e.target.value);
-    };
-
-    const handleAddTag = () => {
-      const newTag = tagInput.trim();
-      if (newTag && !postInput.tags.includes(newTag)) {
+      const value = e.target.value;
+      if (value.includes(',')) {
+        const newTags = value.split(',').map(tag => tag.trim()).filter(tag => tag && !postInput.tags.includes(tag));
         setPostInput((prev) => ({
           ...prev,
-          tags: [...prev.tags, newTag],
+          tags: [...prev.tags, ...newTags],
         }));
+        setTagInput('');
+      } else {
+        setTagInput(value);
       }
-      setTagInput('');
     };
 
     const handleRemoveTag = (tagToRemove) => {
@@ -214,55 +622,97 @@ const Home = () => {
     };
 
     const handleTagInputKeyDown = (e) => {
-      if (e.key === 'Enter' || e.key === ',') {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        handleAddTag();
+        const newTag = tagInput.trim();
+        if (newTag && !postInput.tags.includes(newTag)) {
+          setPostInput((prev) => ({
+            ...prev,
+            tags: [...prev.tags, newTag],
+          }));
+          setTagInput('');
+        }
       }
     };
 
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+      
+      // Validate required fields
+      if (!postInput.title.trim()) {
+        alert('Please enter a title');
+        return;
+      }
+      if (!postInput.content.trim()) {
+        alert('Please enter content');
+        return;
+      }
+      if (!postInput.file) {
+        alert('Please upload a file');
+        return;
+      }
+
       setSubmitting(true);
       try {
         const formData = new FormData();
         formData.append('type', postInput.type);
         formData.append('title', postInput.title);
         formData.append('content', postInput.content);
-        formData.append('tags', JSON.stringify(postInput.tags)); // Should be a JSON string
-        if (postInput.file) {
-          formData.append('file', postInput.file);
-        }
+        formData.append('tags', JSON.stringify(postInput.tags));
+        formData.append('file', postInput.file);
 
-        const url = import.meta.env.VITE_SH_BE_URI + 'api/v1/post/create';
-        await axios.post(url, formData, {
+        const url = import.meta.env.VITE_SH_BE_URL + 'api/v1/post/create';
+        const response = await axios.post(url, formData, {
           headers: {
             Authorization: localStorage.getItem('session_token'),
             'Content-Type': 'multipart/form-data',
           }
         });
-        fetchPosts();
+        
+        alert('Post created successfully!');
+        
+        // Reset form
+        setPostInput({
+          type: 'notes',
+          title: '',
+          content: '',
+          tags: [],
+          file: null,
+        });
+        setTagInput('');
+        
+        // Refresh posts
+        await fetchPosts();
+        setCreatePostModal(false);
       } catch (error) {
         console.error('Error creating post:', error);
+        alert('Error creating post: ' + (error.response?.data?.detail || error.message));
       } finally {
         setSubmitting(false);
-        setCreatePostModal(false);
       }
     };
 
     return (
-      <Modal show={true} onHide={() => setCreatePostModal(false)} centered>
+      <Modal 
+        show={true} 
+        onHide={() => setCreatePostModal(false)} 
+        centered 
+        size="lg"
+        className="animate-scale-in"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Create New Post</Modal.Title>
         </Modal.Header>
+
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Type</Form.Label>
+              <Form.Label>Post Type</Form.Label>
               <Form.Select
                 name="type"
                 value={postInput.type}
-                onChange={handleChange}
+                onChange={(e) => setPostInput(prev => ({ ...prev, type: e.target.value }))}
                 required
               >
                 <option value="notes">Notes</option>
@@ -270,66 +720,88 @@ const Home = () => {
                 <option value="queries">Queries</option>
               </Form.Select>
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Title</Form.Label>
               <Form.Control
                 type="text"
                 name="title"
+                placeholder="Enter your post title..."
                 value={postInput.title}
                 onChange={handleChange}
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Content</Form.Label>
               <Form.Control
                 as="textarea"
-                rows={3}
+                rows={4}
                 name="content"
+                placeholder="Share your content here..."
                 value={postInput.content}
                 onChange={handleChange}
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Tags</Form.Label>
-              <InputGroup>
-                <Form.Control
-                  type="text"
-                  placeholder="Add tag and press Enter"
-                  value={tagInput}
-                  onChange={handleTagInputChange}
-                  onKeyDown={handleTagInputKeyDown}
-                />
-                <Button variant="outline-secondary" onClick={handleAddTag} disabled={!tagInput.trim()}>
-                  Add
-                </Button>
-              </InputGroup>
-              <div className="mt-2">
-                {postInput.tags.map((tag, idx) => (
-                  <Badge
-                    key={idx}
-                    bg="info"
-                    className="me-2"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleRemoveTag(tag)}
-                  >
-                    {tag} &times;
-                  </Badge>
-                ))}
-              </div>
+              <Form.Label>Tags (comma separated)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="tag1, tag2, tag3"
+                value={tagInput}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagInputKeyDown}
+              />
+              {postInput.tags.length > 0 && (
+                <div className="mt-2">
+                  {postInput.tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="custom-tag me-2 mb-1"
+                      onClick={() => handleRemoveTag(tag)}
+                    >
+                      {tag} ×
+                    </span>
+                  ))}
+                </div>
+              )}
             </Form.Group>
-            <Form.Group className="mb-3" required>
-              <Form.Label>File</Form.Label>
+
+            <Form.Group className="mb-3">
+              <Form.Label>File Upload (Required)</Form.Label>
               <Form.Control
                 type="file"
                 name="file"
                 onChange={handleFileChange}
+                accept="image/*,video/*,.pdf,.doc,.docx"
+                required
               />
+              {postInput.file && (
+                <small className="text-success">
+                  Selected: {postInput.file.name}
+                </small>
+              )}
             </Form.Group>
-            <Button variant="primary" type="submit" disabled={submitting}>
-              {submitting ? "Posting..." : "Create Post"}
-            </Button>
+
+            <div className="d-flex gap-2 justify-content-end">
+              <Button 
+                variant="secondary"
+                onClick={() => setCreatePostModal(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                variant="primary"
+                disabled={submitting}
+              >
+                {submitting ? 'Creating...' : 'Create Post'}
+              </Button>
+            </div>
           </Form>
         </Modal.Body>
       </Modal>
@@ -341,24 +813,314 @@ const Home = () => {
       {loader && <Loader />}
       {selectedPost ? <PostModal post={selectedPost} /> : <></>}
       {createPostModal ? <CreatePostModal /> : <></>}
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-5">
-        <h1 className="text-4xl font-bold mb-4">Welcome to StudentHub</h1>
-        <div className="text-lg text-gray-700 mx-auto d-flex justify-space-between items-center mb-4">
-          <div>Your collaborative learning platform</div>
-          <Badge bg="secondary" className={{ "marginLeft": "10px" }} onClick={() => setCreatePostModal(true)}>+ New</Badge>
+      
+      {/* Header Section */}
+      <div className="bg-primary text-white py-4">
+        <div className="container">
+          <div className="row align-items-center">
+            <div className="col-md-6">
+              <h2 className="mb-1">StudentHub</h2>
+              <p className="mb-0">Collaborative learning platform</p>
+            </div>
+            <div className="col-md-6 text-md-end">
+              <Button 
+                className="home-btn"
+                style={{ color: '#fff', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', boxShadow: '0 2px 8px rgba(102,126,234,0.10)', borderRadius: '12px', fontWeight: 600, padding: '12px 28px' }}
+              >
+                <i className="fas fa-plus me-2"></i>
+                Create New Post
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="flex justify-center mt-8 p-5 pt-0">
-        {Array.isArray(posts) && posts.map((post) => (
-          <div key={post.post_id} onClick={(e) => {
-            e.stopPropagation();
-            setSelectedPost(post);
-          }} >
-            <PostCard post={post} />
-          </div>
-        ))}
 
+      {/* Search and Filter Section */}
+      <div style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' }} className="py-4">
+        <div className="container">
+          <div className="row g-3 align-items-center">
+            <div className="col-md-6">
+              <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                <span 
+                  className="input-group-text"
+                  style={{ 
+                    backgroundColor: '#fff',
+                    border: '2px solid #e9ecef',
+                    color: '#667eea',
+                    fontSize: '16px',
+                    padding: '12px 16px'
+                  }}
+                >
+                  <i className="fas fa-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="🔍 Search posts, tags, or content..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    border: '2px solid #e9ecef',
+                    borderLeft: 'none',
+                    color: '#495057',
+                    fontSize: '15px',
+                    padding: '12px 16px',
+                    backgroundColor: '#ffffff'
+                  }}
+                />
+                {searchTerm && (
+                  <button
+                    className="btn"
+                    onClick={() => setSearchTerm('')}
+                    style={{
+                      color: '#6c757d',
+                      borderColor: '#e9ecef',
+                      backgroundColor: '#fff',
+                      border: '2px solid #e9ecef',
+                      borderLeft: 'none',
+                      padding: '12px 16px',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#f8f9fa';
+                      e.target.style.color = '#495057';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#fff';
+                      e.target.style.color = '#6c757d';
+                    }}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="col-md-6">
+              <div className="d-flex gap-2 align-items-center">
+                <span className="fw-semibold me-2" style={{ color: '#495057', fontSize: '14px' }}>
+                  <i className="fas fa-filter me-1" style={{ color: '#667eea' }}></i>
+                  Filter:
+                </span>
+                {['all', 'notes', 'jobs', 'queries'].map(type => (
+                  <button
+                    key={type}
+                    className={`btn btn-sm ${filterType === type ? '' : ''}`}
+                    onClick={() => setFilterType(type)}
+                    style={{
+                      backgroundColor: filterType === type ? '#667eea' : '#ffffff',
+                      color: filterType === type ? '#ffffff' : '#495057',
+                      border: '2px solid #e9ecef',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      transition: 'all 0.3s ease',
+                      textTransform: 'capitalize'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (filterType !== type) {
+                        e.target.style.backgroundColor = '#f8f9fa';
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.color = '#667eea';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (filterType !== type) {
+                        e.target.style.backgroundColor = '#ffffff';
+                        e.target.style.borderColor = '#e9ecef';
+                        e.target.style.color = '#495057';
+                      }
+                    }}
+                  >
+                    {type === 'all' ? (
+                      <>
+                        <i className="fas fa-th me-1"></i>All
+                      </>
+                    ) : type === 'notes' ? (
+                      <>
+                        <i className="fas fa-sticky-note me-1"></i>Notes
+                      </>
+                    ) : type === 'jobs' ? (
+                      <>
+                        <i className="fas fa-briefcase me-1"></i>Jobs
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-question-circle me-1"></i>Queries
+                      </>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Results Summary */}
+          <div className="mt-3">
+            <div 
+              className="badge d-inline-flex align-items-center"
+              style={{
+                backgroundColor: '#f8f9fa',
+                color: '#495057',
+                border: '1px solid #e9ecef',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: '500'
+              }}
+            >
+              <i className="fas fa-chart-bar me-2 text-primary"></i>
+              Showing <strong className="mx-1">{filteredPosts.length}</strong> of <strong className="mx-1">{posts.length}</strong> posts
+              {searchTerm && (
+                <span style={{ color: '#667eea' }} className="ms-1">
+                  for "<em>{searchTerm}</em>"
+                </span>
+              )}
+              {filterType !== 'all' && (
+                <span style={{ color: '#667eea' }} className="ms-1">
+                  in <em>{filterType}</em>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Posts Section */}
+      <div className="py-4">
+        <div className="container">
+          {Array.isArray(filteredPosts) && filteredPosts.length > 0 ? (
+            <div className="row">
+              {filteredPosts.map((post, index) => (
+                <div key={post.post_id} className="col-lg-6 col-xl-4 mb-4">
+                  <div onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPost(post);
+                  }}>
+                    <PostCard post={post} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <div className="mb-4">
+                <i className="fas fa-inbox fa-4x text-muted"></i>
+              </div>
+              {posts.length === 0 ? (
+                <>
+                  <h4 className="text-muted mb-3">No posts yet</h4>
+                  <p className="text-muted mb-4">Be the first to share something with the community!</p>
+                  <Button className="home-btn" onClick={() => setCreatePostModal(true)}>
+                    <i className="fas fa-plus me-2"></i>
+                    Create Your First Post
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h4 className="text-muted mb-3">No posts found</h4>
+                  <p className="text-muted mb-4">
+                    Try adjusting your search terms or filters
+                  </p>
+                  <Button 
+                    className="btn btn-outline-primary px-4 py-2"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setFilterType('all');
+                    }}
+                  >
+                    <i className="fas fa-refresh me-2"></i>
+                    Clear Filters
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Custom Styles for Cool Search Bar */}
+      <style>{`
+        .form-control:focus {
+          border-color: #667eea !important;
+          box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+          transform: translateY(-1px);
+        }
+        
+        .input-group:hover .form-control {
+          border-color: #667eea !important;
+        }
+        
+        .input-group:hover .input-group-text {
+          border-color: #667eea !important;
+          color: #495057 !important;
+        }
+        
+        .form-control::placeholder {
+          color: #adb5bd !important;
+          font-style: italic;
+        }
+      `}</style>
+      <style>{`
+        .post-card {
+          background: #fff;
+          border-radius: 20px;
+          box-shadow: 0 4px 24px rgba(102,126,234,0.08);
+          border: none;
+          color: #222;
+          margin-bottom: 32px;
+        }
+        .custom-tag {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff !important;
+          font-weight: 600;
+          border-radius: 20px;
+          padding: 8px 16px;
+          font-size: 13px;
+          display: inline-block;
+          box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+          margin-right: 8px;
+          margin-bottom: 8px;
+          border: none;
+          transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
+        }
+        .custom-tag:hover {
+          background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+          box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+          transform: translateY(-2px) scale(1.05);
+        }
+        .post-preview-bg {
+          background: #fafbfc;
+          border-radius: 12px;
+          padding: 12px;
+          margin-bottom: 12px;
+          box-shadow: 0 2px 8px rgba(102,126,234,0.05);
+        }
+        .home-btn {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          padding: 12px 28px;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+          display: inline-block;
+          text-align: center;
+          transition: none;
+        }
+        .home-btn:focus,
+        .home-btn:active,
+        .home-btn:visited {
+          color: #fff;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .home-btn:hover {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+          box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+          /* No transform or color change on hover */
+        }
+      `}</style>
     </>
   )
 }
