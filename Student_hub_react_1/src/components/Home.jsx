@@ -825,6 +825,7 @@ const Home = () => {
             <div className="col-md-6 text-md-end">
               <Button 
                 className="home-btn"
+                onClick={() => setCreatePostModal(true)}
                 style={{ color: '#fff', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', boxShadow: '0 2px 8px rgba(102,126,234,0.10)', borderRadius: '12px', fontWeight: 600, padding: '12px 28px' }}
               >
                 <i className="fas fa-plus me-2"></i>
