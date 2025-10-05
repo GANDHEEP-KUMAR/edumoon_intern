@@ -1,0 +1,102 @@
+Assignment Report
+=================
+
+1. React Assignment Topics: useMemo, useReducer, useContext
+----------------------------------------------------------
+
+**Overview:**
+These are advanced React hooks used for state management and performance optimization.
+
+- **useMemo:** Memoizes expensive calculations, preventing unnecessary recalculations on re-renders.
+- **useReducer:** Alternative to useState for complex state logic, similar to Redux reducer pattern.
+- **useContext:** Provides a way to pass data through the component tree without prop drilling.
+
+**Application:**
+In the context of a finance tracker, these hooks can be used to optimize dashboard calculations, manage global state (like user authentication or theme), and share data (like budgets or transactions) across components efficiently.
+
+2. Reporting Module Assignment (React)
+--------------------------------------
+
+**Task:**
+Complete the reporting module for the personal finance tracker ([Demo Link](https://personal-finance-tracking.netlify.app/)).
+
+**Key Features Expected:**
+- Visualize financial data (charts, graphs, summaries)
+- Filter and export reports
+- Use React hooks (useMemo, useReducer, useContext) for state and performance
+
+**Approach:**
+- Analyze existing codebase (see `FINANCE/Reports/ReportsPage.jsx`)
+- Integrate charting libraries (e.g., Chart.js, Recharts)
+- Use context for sharing report filters and user data
+- Memoize report calculations for performance
+
+3. Python QR Code Generator
+---------------------------
+
+**Task:**
+Build a Python CLI program that generates a QR code from user input and saves it as an image.
+
+**Libraries Used:**
+- `qrcode` for QR code generation
+- `Pillow` for image handling
+
+**Features:**
+- Runs from terminal
+- Takes user input (string/URL)
+- Saves QR code as an image (e.g., `qrcode.png`)
+
+**Sample Implementation:**
+See `Assignment/qrcode/qrcode_generator.py` for reference.
+
+4. Encrypted Notes CLI App (Python)
+-----------------------------------
+
+**Task:**
+Create a CLI notes app that encrypts notes when saving and decrypts when reading.
+
+**Libraries Used:**
+- `cryptography` for encryption
+- `datetime` for timestamps
+
+**Features:**
+- Write and read notes via CLI
+- Notes are encrypted at rest
+- Decryption on reading
+
+**Sample Implementation:**
+See `Assignment/notes.py` for a working example.
+
+5. MongoDB User/Product/Order Management (Python)
+-------------------------------------------------
+
+**Task:**
+Create a Python program to manage users, products, and orders in MongoDB.
+
+**Requirements:**
+- User creation with email, encrypted password, username
+- Login with email and password
+- Product management (details, seller ID)
+- Order management (product ID, user ID, order ID, date, quantity)
+
+**Approach:**
+- Use `pymongo` for MongoDB operations
+- Use `bcrypt` or similar for password encryption
+- Design collections for users, products, orders
+
+**Sample Structure:**
+- `users`: { email, username, password (hashed) }
+- `products`: { product_id, details, seller_id }
+- `orders`: { order_id, product_id, user_id, date, quantity }
+
+**Note:**
+Refer to the `student_collabration/` folder for related Python scripts and structure.
+
+---
+
+**Summary:**
+These assignments cover full-stack development skills: advanced React hooks, Python CLI tools, encryption, QR code generation, and database management with MongoDB. The provided codebase and folder structure offer practical examples and starting points for each task.
+
+**Prepared by:**
+[Your Name]
+Date: July 2, 2025
